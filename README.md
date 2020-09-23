@@ -1,8 +1,8 @@
 # Virtual-to-Real-Pedestrian-Detection
 
-This is the official implementation for our paper submitted at *Sensors - Special Issue on Visual Sensors for Object Tracking and Recognition*:
+This is the official implementation for our paper published at *Sensors - Special Issue on Visual Sensors for Object Tracking and Recognition*:
 
-**[Virtual to Real adaptation of Pedestrian Detectors](https://arxiv.org/abs/2001.03032)**
+**[Virtual to Real adaptation of Pedestrian Detectors](https://www.mdpi.com/1424-8220/20/18/5250)**
 
 [Luca Ciampi](https://scholar.google.it/citations?user=dCjyf-8AAAAJ&hl=it), [Nicola Messina](https://scholar.google.it/citations?user=g-UGCd8AAAAJ&hl=it), [Fabrizio Falchi](https://scholar.google.it/citations?user=4Vr1dSQAAAAJ&hl=it), [Claudio Gennaro](https://scholar.google.it/citations?user=sbFBI4IAAAAJ&hl=it), [Giuseppe Amato](https://scholar.google.it/citations?user=dXcskhIAAAAJ&hl=it)
 
@@ -11,13 +11,15 @@ This is the official implementation for our paper submitted at *Sensors - Specia
 If you find this work or code useful for your research, please cite:
 
 ```
-@misc{ciampi2020virtual,
-    title={Virtual to Real adaptation of Pedestrian Detectors for Smart Cities},
-    author={Luca Ciampi and Nicola Messina and Fabrizio Falchi and Claudio Gennaro and Giuseppe Amato},
-    year={2020},
-    eprint={2001.03032},
-    archivePrefix={arXiv},
-    primaryClass={cs.CV}
+@article{ciampi2020virtual,
+  title={Virtual to Real Adaptation of Pedestrian Detectors},
+  author={Ciampi, Luca and Messina, Nicola and Falchi, Fabrizio and Gennaro, Claudio and Amato, Giuseppe},
+  journal={Sensors},
+  volume={20},
+  number={18},
+  pages={5250},
+  year={2020},
+  publisher={Multidisciplinary Digital Publishing Institute}
 }
 ```
 
