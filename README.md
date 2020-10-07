@@ -7,6 +7,27 @@ This is the official implementation for our paper published at *Sensors - Specia
 [Luca Ciampi](https://scholar.google.it/citations?user=dCjyf-8AAAAJ&hl=it), [Nicola Messina](https://scholar.google.it/citations?user=g-UGCd8AAAAJ&hl=it), [Fabrizio Falchi](https://scholar.google.it/citations?user=4Vr1dSQAAAAJ&hl=it), [Claudio Gennaro](https://scholar.google.it/citations?user=sbFBI4IAAAAJ&hl=it), [Giuseppe Amato](https://scholar.google.it/citations?user=dXcskhIAAAAJ&hl=it)
 
 
+<p align="center">
+  <img src="images/repo_image.png">
+</p>
+
+
+## Setup
+
+1. Clone the repo and move into it:
+```
+git clone https://github.com/ciampluca/Virtual-to-Real-Pedestrian-Detection.git
+cd Virtual-to-Real-Pedestrian-Detection
+```
+
+2. Setup python environment using virtualenv:
+```
+virtualenv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+
 ## Citations
 If you find this work or code useful for your research, please cite:
 
