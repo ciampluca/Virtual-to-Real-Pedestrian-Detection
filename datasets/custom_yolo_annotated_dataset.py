@@ -1,25 +1,21 @@
 import os
-from PIL import Image
-import random
+from PIL import Image, ImageDraw
 import numpy as np
 
 import torch
-import torch.nn.functional as F
+from torch.utils.data import DataLoader
 
 from torchvision.datasets import VisionDataset
+from torchvision import transforms as torchvision_transforms
 
-
-def resize_image(image, size):
-    image = F.interpolate(image.unsqueeze(0), size=size, mode="nearest").squeeze(0)
-    return image
+from utils import transforms as custom_T
 
 
 class CustomYoloAnnotatedDataset(VisionDataset):
 
-    def __init__(self, root, transforms=None, transform=None, target_transform=None, dataset_name=None,
-                 multiscale=False, img_size=None, percentage=None, split="train"):
-        super().__init__(root, transforms, transform, target_transform)
-        # load all image and target files, sorting them to ensure that they are aligned
+    def __init__(self, root, transforms=None, dataset_name=None, percentage=None, split="train"):
+        super().__init__(root, transforms)
+
         assert not (percentage and split == "test"), "Cannot use percentage while testing"
 
         if split == "val":
@@ -36,6 +32,7 @@ class CustomYoloAnnotatedDataset(VisionDataset):
 
         if dataset_name:
             self.dataset_name = dataset_name
+
         if percentage:
             all_images = sorted([img for img in os.listdir(self.images_path) if img.endswith(".png") or
                                  img.endswith(".jpg") or img.endswith("jpeg")])
@@ -54,22 +51,6 @@ class CustomYoloAnnotatedDataset(VisionDataset):
         else:
             self.images = list(sorted(os.listdir(self.images_path)))
             self.targets = list(sorted(os.listdir(self.targets_path))) if self.targets_path is not None else None
-
-        self.multiscale = multiscale
-        self.batch_count = 0
-        # TODO check next operations, some are slow, some useful only in the training phase and only with yolo
-        self.imgs_id_name = {k: v for k, v in enumerate(self.images)}
-        self.imgs_id_path = [os.path.join(self.images_path, img_name) for k, img_name in self.imgs_id_name.items()]
-        # self.imgs_dimensions = []
-        # for path in self.images:
-        #     image_path = os.path.join(self.images_path, path)
-        #     image = Image.open(image_path).convert("RGB")
-        #     self.imgs_dimensions.append(image.size)
-        # self.imgs_id_dimension = {k: v for k, v in enumerate(self.imgs_dimensions)}
-        # if img_size:
-        #     self.img_size = img_size
-        #     self.min_size = self.img_size - 3 * 32
-        #     self.max_size = self.img_size + 3 * 32
 
     def __getitem__(self, index):
         # load image
@@ -97,13 +78,14 @@ class CustomYoloAnnotatedDataset(VisionDataset):
                     area = (y_max - y_min) * (x_max - x_min)
                     bounding_boxes_areas.append(area)
                     num_bbs += 1
+
             if num_bbs == 0:
                 bounding_boxes = [[]]
 
             # Converting everything related to the target into a torch.Tensor
             bounding_boxes = torch.as_tensor(bounding_boxes, dtype=torch.float32)
             bounding_boxes_areas = torch.as_tensor(bounding_boxes_areas, dtype=torch.float32)
-            labels = torch.ones((num_bbs,), dtype=torch.int64)     # there is only one class
+            labels = torch.ones((num_bbs,), dtype=torch.int64)  # there is only one class
             image_id = torch.tensor([index])
             # suppose all instances are not crowd
             iscrowd = torch.zeros((num_bbs,), dtype=torch.int64)
@@ -126,25 +108,54 @@ class CustomYoloAnnotatedDataset(VisionDataset):
     def __len__(self):
         return len(self.images)
 
-    # TODO check, useful for the training phase
-    def custom_collate_fn_yolo(self, batch):
-        imgs, targets = list(zip(*batch))
-
-        # Add sample index to targets
-        for i, boxes in enumerate(targets):
-            boxes[:, 0] = i
-        targets = torch.cat(targets, 0)
-
-        # Selects new image size every tenth batch
-        if self.multiscale and self.batch_count % 10 == 0:
-            self.img_size = random.choice(range(self.min_size, self.max_size + 1, 32))
-
-        # Resize images to input shape
-        imgs = torch.stack([resize_image(img, self.img_size) for img in imgs])
-        self.batch_count += 1
-
-        return imgs, targets
-
     def standard_collate_fn(self, batch):
         return list(zip(*batch))
 
+
+# Testing code
+if __name__ == "__main__":
+    dataset_root_path = ""
+    split = "train"
+    percentage = 10
+    NUM_WORKERS = 0
+    BATCH_SIZE = 2
+    DEVICE = "cuda"
+    DATASET_NAME = ""
+
+    transforms = None
+    if split == "train":
+        transforms = custom_T.Compose([
+            custom_T.RandomHorizontalFlip(),
+            custom_T.RandomCrop(),
+            custom_T.ToTensor(),
+            custom_T.FasterRCNNResizer()
+        ])
+    elif split == "val" or split == "test":
+        transforms = custom_T.Compose([
+            custom_T.ToTensor(),
+            custom_T.FasterRCNNResizer()
+        ])
+
+    dataset = CustomYoloAnnotatedDataset(dataset_root_path, transforms=transforms, dataset_name=DATASET_NAME,
+                                         percentage=percentage, split=split)
+
+    data_loader = DataLoader(
+        dataset,
+        batch_size=BATCH_SIZE,
+        shuffle=False,
+        num_workers=NUM_WORKERS,
+        collate_fn=dataset.standard_collate_fn
+    )
+
+    for images, targets in data_loader:
+        images = list(image.to(DEVICE) for image in images)
+        targets = [{k: v.to(DEVICE) for k, v in t.items()} for t in targets]
+
+        for image, target in zip(images, targets):
+            img_id = target['image_id'].item()
+            print(img_id)
+            pil_image = torchvision_transforms.ToPILImage()(image.cpu())
+            draw = ImageDraw.Draw(pil_image)
+            for bb in target['boxes']:
+                draw.rectangle([bb[0].item(), bb[1].item(), bb[2].item(), bb[3].item()])
+            pil_image.save("../output_debug/{}.png".format(img_id))
