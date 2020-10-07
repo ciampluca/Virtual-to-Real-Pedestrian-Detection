@@ -28,6 +28,15 @@ pip install -r requirements.txt
 ```
 
 
+3. Prepare data:
+```
+cd data
+wget http://datino.isti.cnr.it/viped.zip
+```
+You should have 3 folders corresponding to 3 different datasets (ViPeD, MOT17Det and MOT20Det) having the 
+same structure: imgs containing images and bbs containing the associated txt files of the annotations.
+
+
 ## Citations
 If you find this work or code useful for your research, please cite:
 
