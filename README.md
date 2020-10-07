@@ -29,6 +29,8 @@ pip install -r requirements.txt
 
 
 3. Prepare data:
+
+3.1 - ViPeD Dataset (**[ViPeD - Virtual Pedestrian Dataset](http://aimir.isti.cnr.it/viped/)**)
 ```
 cd data
 wget http://datino.isti.cnr.it/viped.zip
