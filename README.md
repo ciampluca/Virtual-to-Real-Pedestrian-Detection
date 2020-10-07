@@ -30,10 +30,21 @@ pip install -r requirements.txt
 
 3. Prepare data:
 
-3.1 - ViPeD Dataset (**[ViPeD - Virtual Pedestrian Dataset](http://aimir.isti.cnr.it/viped/)**)
+- ViPeD Dataset (**[ViPeD - Virtual Pedestrian Dataset](http://aimir.isti.cnr.it/viped/)**)
 ```
 wget http://datino.isti.cnr.it/viped.zip
 unzip viped.zip -d data
+rm viped.zip
+```
+- MOT17Det Dataset (**[MOT17Det](https://motchallenge.net/data/MOT17Det/)**)
+```
+wget https://motchallenge.net/data/MOT17Det.zip
+unzip MOT17Det.zip -d data
+```
+- MOT20Det Dataset (**[MOT20Det](https://motchallenge.net/data/MOT20Det/)**)
+```
+wget https://motchallenge.net/data/MOT20Det.zip
+unzip MOT20Det.zip -d data
 ```
 You should have 3 folders corresponding to 3 different datasets (ViPeD, MOT17Det and MOT20Det) having the 
 same structure: imgs containing images and bbs containing the associated txt files of the annotations.
