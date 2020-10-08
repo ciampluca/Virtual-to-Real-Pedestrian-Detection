@@ -1,11 +1,24 @@
 # Virtual-to-Real-Pedestrian-Detection
 
-This is the official implementation for our paper published at *Sensors - Special Issue on Visual Sensors for Object Tracking and Recognition*:
+This is the official implementation for our paper:
 
 **[Virtual to Real adaptation of Pedestrian Detectors](https://www.mdpi.com/1424-8220/20/18/5250)**
 
 [Luca Ciampi](https://scholar.google.it/citations?user=dCjyf-8AAAAJ&hl=it), [Nicola Messina](https://scholar.google.it/citations?user=g-UGCd8AAAAJ&hl=it), [Fabrizio Falchi](https://scholar.google.it/citations?user=4Vr1dSQAAAAJ&hl=it), [Claudio Gennaro](https://scholar.google.it/citations?user=sbFBI4IAAAAJ&hl=it), [Giuseppe Amato](https://scholar.google.it/citations?user=dXcskhIAAAAJ&hl=it)
 
+published at *Sensors - Special Issue on Visual Sensors for Object Tracking and Recognition*
+
+We introduce **[ViPeD](http://aimir.isti.cnr.it/viped/)** (Virtual Pedestrian Dataset), a new synthetically generated 
+set of images collected with the highly photo-realistic graphical engine of the video game GTA V (Grand Theft Auto V) 
+that extends the [JTA](https://aimagelab.ing.unimore.it/imagelab/page.asp?IdPage=25) dataset, where annotations are 
+automatically acquired, suitable for the pedestrian detection task. However, when training solely on the synthetic 
+dataset, the model experiences a Synthetic2Real domain shift leading to a performance drop when applied to real-world 
+images. To mitigate this gap, we propose two different domain adaptation techniques suitable for the pedestrian 
+detection task, but possibly applicable to general object detection. Experiments show that the network trained with 
+ViPeD can generalize over unseen real-world scenarios better than the detector trained over real-world data, 
+exploiting the variety of our synthetic dataset. Furthermore, we demonstrate that with our domain adaptation techniques, 
+we can reduce the Synthetic2Real domain shift, making the two domains closer and obtaining a performance improvement 
+when testing the network over the real-world images.
 
 <p align="center">
   <img src="images/repo_image.png">
@@ -42,22 +55,33 @@ chmod -R 755 data/ViPeD
 ```
 wget https://motchallenge.net/data/MOT17Det.zip
 unzip MOT17Det.zip -d data
+rm MOT17Det.zip
 ```
 - MOT20Det Dataset (**[MOT20Det](https://motchallenge.net/data/MOT20Det/)**)
 ```
 wget https://motchallenge.net/data/MOT20Det.zip
 unzip MOT20Det.zip -d data
+rm MOT20Det.zip
 ```
-You should now have 3 folders in the data directory, corresponding to 3 different datasets (ViPeD, MOT17Det and 
-MOT20Det). They should have a common structure: imgs containing images and bbs containing the associated txt files of 
-the annotations. Annotations of the bounding boxes are in the format [x_center, y_center, height, width] relative to the 
-image size.
+- COCOPersons Dataset
+```
+wget http://datino.isti.cnr.it/COCOPersons.zip
+unzip COCOPersons.zip -d data
+rm COCOPersons.zip
+```
+You should now have 4 folders in the `data` directory, corresponding to 4 different datasets (ViPeD, MOT17Det, MOT20Det
+and COCOPersons). They should have a common structure: `imgs` containing images and `bbs` containing the associated txt 
+files of the annotations. 
+Annotations of the bounding boxes are in the format *[x_center, y_center, height, width]* relative to the image size.
 
-If you want, you can put the datasets in a different folder than the data one. In this case, you have to modify the 
+If you want, you can put the datasets in a different folder than the `data` one. In this case, you have to modify the 
 train_val.py and test.py files accordingly.
 
 
 ## Evaluate
+Inside the `checkpoints` folder, you can find some pre-trained model.
+
+COMING SOON
 
 
 ## Train

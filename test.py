@@ -18,27 +18,17 @@ from datasets.custom_yolo_annotated_dataset import CustomYoloAnnotatedDataset
 PRETRAINED_MODELS = {
     "viped": "./checkpoints/model_pretrained_viped.pth",
     "viped_mot17": "./checkpoints/model_pretrained_viped_mot17.pth",
-    "viped_mot19": "./checkpoints/model_pretrained_viped_mot19.pth",
     "viped_mot20": "./checkpoints/model_pretrained_viped_mot20.pth",
     "viped_mot17_mb": "./checkpoints/model_pretrained_viped_mot17_mb.pth",
-    "viped_mot19_mb": "./checkpoints/model_pretrained_viped_mot19_mb.pth",
     "viped_mot20_mb": "./checkpoints/model_pretrained_viped_mot20_mb.pth",
     "viped_cocopersons_mb": "./checkpoints/model_pretrained_viped_cocopersons_mb.pth",
-    "all_real": "./checkpoints/model_pretrained_all_real.pth",
 }
 
 DATASETS = {
     "viped": "./data/viped",
     "MOT17Det": "./data/MOT17Det",
-    "MOT19Det": "./data/MOT19Det",
     "MOT20Det": "/data/MOT20Det",
-    "MOT17Det_VS": "./data/MOT17Det_VS",
-    "MOT19Det_VS": "./data/MOT19Det_VS",
-    "MOT20Det_VS": "/data/MOT20Det_VS",
     "COCOPersons": "./data/COCOPersons",
-    "CityPersons": "./data/CityPersons",
-    "CrowdHuman": "./data/CrowdHuman",
-    "AllReal": "/mnt/Dati_SSD_1/datasets/pedestrian_detection/AllReal",
 }
 
 
@@ -183,11 +173,11 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--resume', default='viped',
-                        help='Resume from checkpoint. Possible values are viped (default), viped_mot17, viped_mot19, '
-                             'viped_mot17_mb, viped_mot19_mb, viped_cocopersons_mb. '
+                        help='Resume from checkpoint. Possible values are viped (default), viped_mot17, viped_mot20, '
+                             'viped_mot17_mb, viped_mot20_mb, viped_cocopersons_mb. '
                              'Otherwise give the .pth path of your custom model')
     parser.add_argument('--dataset-name', default='MOT17Det',
-                        help='Dataset name. Possible values are MOT17Det (default), MOT19Det')
+                        help='Dataset name. Possible values are MOT17Det (default), MOT20Det')
     parser.add_argument('--device', default='cuda', help='Device. Default is cuda')
     parser.add_argument('-b', '--batch-size', default=1, type=int,
                         help='Images per gpu, the total batch size is $NGPU x batch_size')
