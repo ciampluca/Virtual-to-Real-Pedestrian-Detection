@@ -18,21 +18,11 @@ from datasets.custom_yolo_annotated_dataset import CustomYoloAnnotatedDataset
 from datasets.datasets_ensemble import EnsembleBatchSampler, DatasetsEnsemble
 
 
-# TENSORBOARD_RESULT_FILE_NAME = "faster_rcnn_mix_VipedBasicMOT20VerticalSplit_2vs1_maxDets350_thresh005"
-TENSORBOARD_RESULT_FILE_NAME = "faster_rcnn_coco_allRealFineTuning_maxDets350_thresh005"
-
 DATASETS = {
     "viped": "./data/viped",
     "MOT17Det": "./data/MOT17Det",
-    "MOT19Det": "./data/MOT19Det",
     "MOT20Det": "/data/MOT20Det",
-    "MOT17Det_VS": "./data/MOT17Det_VS",
-    "MOT19Det_VS": "./data/MOT19Det_VS",
-    "MOT20Det_VS": "/data/MOT20Det_VS",
     "COCOPersons": "./data/COCOPersons",
-    "CityPersons": "./data/CityPersons",
-    "CrowdHuman": "./data/CrowdHuman",
-    "AllReal": "/mnt/Dati_SSD_1/datasets/pedestrian_detection/AllReal",
 }
 
 
@@ -101,7 +91,7 @@ def main(args):
     device = torch.device(args.device)
 
     # Creating tensorboard writer
-    writer = SummaryWriter(comment=TENSORBOARD_RESULT_FILE_NAME)
+    writer = SummaryWriter(comment="_" + args.tensorboard_file_name)
 
     ####################
     # Creating model
@@ -138,16 +128,9 @@ def main(args):
     print("Loading training data")
     train_datasets_dict = {
         'viped': lambda: get_dataset("viped", get_transform(train=True)),
-        'MOT19Det': lambda: get_dataset("MOT19Det", get_transform(train=True)),
         'MOT20Det': lambda: get_dataset("MOT20Det", get_transform(train=True)),
         'MOT17Det': lambda: get_dataset("MOT17Det", get_transform(train=True)),
-        'CityPersons': lambda: get_dataset("CityPersons", get_transform(train=True)),
         'COCOPersons': lambda: get_dataset("COCOPersons", get_transform(train=True)),
-        'MOT17Det_VS': lambda: get_dataset("MOT17Det_VS", get_transform(train=True)),
-        'MOT19Det_VS': lambda: get_dataset("MOT19Det_VS", get_transform(train=True)),
-        'MOT20Det_VS': lambda: get_dataset("MOT20Det_VS", get_transform(train=True)),
-        'CrowdHuman': lambda: get_dataset("CrowdHuman", get_transform(train=True)),
-        'AllReal': lambda: get_dataset("AllReal", get_transform(train=True)),
     }
 
     # Preparing training dataloader
@@ -189,15 +172,8 @@ def main(args):
     print("Loading validation data")
     val_datasets_dict = {
         'viped': lambda: get_dataset("viped", get_transform(train=False), split="val"),
-        'MOT19Det': lambda: get_dataset("MOT19Det", get_transform(train=False), split="val"),
         'MOT20Det': lambda: get_dataset("MOT20Det", get_transform(train=False), split="val"),
         'MOT17Det': lambda: get_dataset("MOT17Det", get_transform(train=False), split="val"),
-        'CityPersons': lambda: get_dataset("CityPersons", get_transform(train=False), split="val"),
-        'MOT17Det_VS': lambda: get_dataset("MOT17Det_VS", get_transform(train=False), split="val"),
-        'MOT19Det_VS': lambda: get_dataset("MOT19Det_VS", get_transform(train=False), split="val"),
-        'MOT20Det_VS': lambda: get_dataset("MOT20Det_VS", get_transform(train=False), split="val"),
-        "CrowdHuman": lambda: get_dataset("CrowdHuman", get_transform(train=False), split="val"),
-        "AllReal": lambda: get_dataset("AllReal", get_transform(train=False), split="val")
     }
 
     # Creating val dataloaders
@@ -346,12 +322,11 @@ if __name__ == "__main__":
     parser.add_argument('--lr-step-size', default=20000, type=int, help='Decrease lr every step-size epochs')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='Decrease lr by a factor of lr-gamma')
     parser.add_argument('--train-on', default='viped', type=str,
-                        help="Which dataset use for training. Possible values are viped (default), MOT19Det, "
-                             "MOT17Det, MOT20Det, MOT19Det_VS, MOT17Det_VS, MOT20Det_VS, COCOPersons, CrowdHuman. " 
+                        help="Which dataset use for training. Possible values are viped (default), MOT17Det, "
+                             "MOT20Det, COCOPersons. " 
                              "You can also put two single names separated by a comma (e.g., viped,MOT17Det), and in "
                              "this case the Mixed Batch DA approach is automatically selected")
-    parser.add_argument('-b', '--batch-size', default=1, type=int,
-                        help='Images per gpu, the total batch size is $NGPU x batch_size')
+    parser.add_argument('-b', '--batch-size', default=4, type=int, help='Batch size')
     parser.add_argument('--epochs', default=50, type=int, metavar='N',
                         help='Number of total epochs to run (default: 50)')
     parser.add_argument('-j', '--workers', default=8, type=int, metavar='N',
@@ -359,11 +334,13 @@ if __name__ == "__main__":
     parser.add_argument('--tgt-images-in-batch', default=1, type=int,
                         help="In case of mixed batches, how many target images in the batch (default: 1)")
     parser.add_argument('--validate-on', default='all', type=str,
-                        help="Which dataset use for validation. Possible values are all (default), viped, MOT19Det, "
-                             "MOT20Det, MOT17Det, MOT19Det_VS, MOT17Det_VS, MOT20Det_VS, CrowdHuman.")
+                        help="Which dataset use for validation. Possible values are all (default), viped, MOT17Det, "
+                             "MOT20Det.")
     parser.add_argument('--save-freq', default=1000, type=int, help='Save frequency')
     parser.add_argument('--log-loss', default=10, type=int, help='Save loss values using tensorboard (frequency)')
     parser.add_argument('--print-freq', default=100, type=int, help='print frequency')
+    parser.add_argument('--tensorboard-file-name', default="default_experiment_name",
+                        help='name of the tensorboard file')
 
     args = parser.parse_args()
 

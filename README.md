@@ -28,13 +28,15 @@ pip install -r requirements.txt
 ```
 
 
-3. Prepare data:
+## Data Preparation
 
-- ViPeD Dataset (**[ViPeD - Virtual Pedestrian Dataset](http://aimir.isti.cnr.it/viped/)**)
+- ViPeD Dataset (**[ViPeD - Virtual Pedestrian Dataset](http://aimir.isti.cnr.it/viped/)**) - Just if you want to 
+re-train the model
 ```
 wget http://datino.isti.cnr.it/viped.zip
 unzip viped.zip -d data
 rm viped.zip
+chmod -R 755 data/ViPeD
 ```
 - MOT17Det Dataset (**[MOT17Det](https://motchallenge.net/data/MOT17Det/)**)
 ```
@@ -46,8 +48,33 @@ unzip MOT17Det.zip -d data
 wget https://motchallenge.net/data/MOT20Det.zip
 unzip MOT20Det.zip -d data
 ```
-You should have 3 folders corresponding to 3 different datasets (ViPeD, MOT17Det and MOT20Det) having the 
-same structure: imgs containing images and bbs containing the associated txt files of the annotations.
+You should now have 3 folders in the data directory, corresponding to 3 different datasets (ViPeD, MOT17Det and 
+MOT20Det). They should have a common structure: imgs containing images and bbs containing the associated txt files of 
+the annotations. Annotations of the bounding boxes are in the format [x_center, y_center, height, width] relative to the 
+image size.
+
+If you want, you can put the datasets in a different folder than the data one. In this case, you have to modify the 
+train_val.py and test.py files accordingly.
+
+
+## Evaluate
+
+
+## Train
+In order to train the model using the ViPeD dataset and validate over all the real-world datasets, issue the following 
+command:
+```
+python train_val.py --train-on viped --validate-on all --tensorboard-file-name train_viped_validate_all
+```
+If you want to train the model using the Mixed-Batch Domain Adaptation Technique, for example using the ViPeD and the
+MOT17Det datasets, issue the following command:
+```
+python train_val.py --train-on viped,MOT17Det --validate-on all --tensorboard-file-name train_mixedBatch_vipedAndMOT17DET_validate_all
+```
+Many other options are available. Issue the following command to see them:
+```
+python train_val.py --help
+```
 
 
 ## Citations
