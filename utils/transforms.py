@@ -85,7 +85,7 @@ class FasterRCNNResizer(object):
         image = torch.nn.functional.interpolate(
             image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
 
-        if target is None:
+        if target is None or target["boxes"].nelement() == 0:
             return image, target
 
         bbox = target["boxes"]

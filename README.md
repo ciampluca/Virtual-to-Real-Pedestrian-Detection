@@ -56,12 +56,14 @@ chmod -R 755 data/ViPeD
 wget https://motchallenge.net/data/MOT17Det.zip
 unzip MOT17Det.zip -d data
 rm MOT17Det.zip
+python scripts_prepare_data/prepare_mot_datasets.py data/MOT17Det/
 ```
 - MOT20Det Dataset (**[MOT20Det](https://motchallenge.net/data/MOT20Det/)**)
 ```
 wget https://motchallenge.net/data/MOT20Det.zip
 unzip MOT20Det.zip -d data
 rm MOT20Det.zip
+python scripts_prepare_data/prepare_mot_datasets.py data/MOT20Det/
 ```
 - COCOPersons Dataset
 ```
