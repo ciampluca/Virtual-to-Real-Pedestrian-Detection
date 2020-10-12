@@ -68,10 +68,8 @@ def _get_iou_types(model):
 
 
 @torch.no_grad()
-def evaluate(model, data_loader, device, categories=None, save_on_file=None, dataset_name=None, yolo=None,
-             max_dets=None):
+def evaluate(model, data_loader, device, categories=None, save_on_file=None, dataset_name=None, max_dets=None):
     n_threads = torch.get_num_threads()
-    # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
     # cpu_device = torch.device("cpu")
     model.eval()
@@ -82,24 +80,14 @@ def evaluate(model, data_loader, device, categories=None, save_on_file=None, dat
     iou_types = _get_iou_types(model)
     coco_evaluator = CocoEvaluator(coco, iou_types, max_dets=max_dets)
 
-    num_image = 0
     for image, targets in metric_logger.log_every(data_loader, 100, header):
         image = list(img.to(device) for img in image)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-        batch_size = len(targets)
 
         torch.cuda.synchronize()
         model_time = time.time()
-        if yolo:
-            orig_dims = []
-            for _ in range(batch_size):
-                if num_image < len(data_loader.dataset):
-                    image_width, image_height = data_loader.dataset.imgs_id_dimension[num_image]
-                    orig_dims.append((image_height, image_width))
-                    num_image += 1
-            outputs = model(image, orig_dimensions=orig_dims)
-        else:
-            outputs = model(image)
+
+        outputs = model(image)
 
         outputs = [{k: v.to(device) for k, v in t.items()} for t in outputs]
         model_time = time.time() - model_time
@@ -141,9 +129,8 @@ def evaluate(model, data_loader, device, categories=None, save_on_file=None, dat
 
     # accumulate predictions from all images
     coco_evaluator.accumulate()
-    # coco_evaluator.summarize()
-    # TODO improve (better move from here?)
     coco_evaluator.summarize()
+    # TODO improve (better move from here?)
     if save_on_file:
         print("Saving results to file")
         if dataset_name:
@@ -152,8 +139,5 @@ def evaluate(model, data_loader, device, categories=None, save_on_file=None, dat
             print("IoU metric: {}".format(iou_type), file=open(save_on_file, 'a+'))
             print(coco_eval.stats, file=open(save_on_file, 'a+'))
     torch.set_num_threads(n_threads)
-
-    for iou_type, coco_eval in coco_evaluator.coco_eval.items():
-        ap_to_return = coco_eval.stats[1]
 
     return coco_evaluator

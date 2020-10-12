@@ -21,7 +21,7 @@ from datasets.datasets_ensemble import EnsembleBatchSampler, DatasetsEnsemble
 DATASETS = {
     "viped": "./data/viped",
     "MOT17Det": "./data/MOT17Det",
-    "MOT20Det": "/data/MOT20Det",
+    "MOT20Det": "./data/MOT20Det",
     "COCOPersons": "./data/COCOPersons",
 }
 
@@ -31,6 +31,27 @@ def get_dataset(name, transforms, percentage=None, split="train"):
         dataset_root_path = DATASETS[name]
         dataset = CustomYoloAnnotatedDataset(dataset_root_path, transforms, dataset_name=name, percentage=percentage,
                                              split=split)
+        # Creating a file taking track of the percentage for the val split, and eventually remove the cached dataset
+        cache_path = 'dataset_cache'
+        txt_file = os.path.join(cache_path, name + ".txt")
+        if split == "val":
+            if not percentage:
+                percentage = 100
+            if os.path.isfile(txt_file):
+                with open(txt_file) as f:
+                    content = f.readlines()
+                content = [x.strip() for x in content]
+                saved_percentage = int(content[0])
+                if percentage != saved_percentage:
+                    with open(txt_file, "w") as text_file:
+                        text_file.write("{}".format(percentage))
+                    if os.path.isfile(os.path.join(cache_path, name + ".pkl")):
+                        os.remove(os.path.join(cache_path, name + ".pkl"))
+            else:
+                if os.path.isfile(os.path.join(cache_path, name + ".pkl")):
+                    os.remove(os.path.join(cache_path, name + ".pkl"))
+                with open(txt_file, "w") as text_file:
+                    text_file.write("{}".format(percentage))
     else:
         raise ValueError("Non existing dataset")
 

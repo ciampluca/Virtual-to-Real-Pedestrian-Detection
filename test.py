@@ -27,7 +27,7 @@ PRETRAINED_MODELS = {
 DATASETS = {
     "viped": "./data/viped",
     "MOT17Det": "./data/MOT17Det",
-    "MOT20Det": "/data/MOT20Det",
+    "MOT20Det": "./data/MOT20Det",
     "COCOPersons": "./data/COCOPersons",
 }
 
