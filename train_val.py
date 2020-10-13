@@ -123,6 +123,12 @@ def main(args):
     model.to(device)
     model.train()
 
+    # Eventually resuming a pre-trained model
+    if args.resume:
+        print("Resuming pre-trained model")
+        checkpoint = torch.load(args.resume)
+        model.load_state_dict(checkpoint['model'])
+
     # Freeze the backbone parameters, if needed
     if backbone is not None and args.freeze_backbone:
         for param in backbone.parameters():
@@ -362,6 +368,7 @@ if __name__ == "__main__":
     parser.add_argument('--print-freq', default=100, type=int, help='print frequency')
     parser.add_argument('--tensorboard-file-name', default="default_experiment_name",
                         help='name of the tensorboard file')
+    parser.add_argument('--resume', default='', help='load a pre-trained model')
 
     args = parser.parse_args()
 

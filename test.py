@@ -52,20 +52,19 @@ def get_transform():
 
 
 def evaluate(args, model, dataset, eval_apis, folder_name):
-    dset = dataset()
-
+    # Creating data loader
     data_loader = DataLoader(
-        dset,
+        dataset,
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=args.workers,
-        collate_fn=dset.standard_collate_fn
+        collate_fn=dataset.standard_collate_fn
     )
 
     if eval_apis == 'coco':
         filename = os.path.join(folder_name, '{}.txt'.format(data_loader.dataset.dataset_name))
         evaluate_coco(model, data_loader, device=args.device, categories=[1], save_on_file=filename,
-                      dataset_name=dset.dataset_name, max_dets=args.max_dets)
+                      dataset_name=dataset.dataset_name, max_dets=args.max_dets)
     elif eval_apis == 'mot':
         dirname = os.path.join(folder_name, data_loader.dataset.dataset_name)
         os.makedirs(dirname)
@@ -118,26 +117,31 @@ def main(args):
 
     device = torch.device(args.device)
 
-    # Creating model
-    print("Creating model")
-    num_classes = 2
-    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=False,
-                                                                 box_detections_per_img=args.max_dets,
-                                                                 box_score_thresh=args.thresh)
-
-    # get number of input features for the classifier
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-    # replace the pre-trained head with a new one
-    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
-
     # Retrieving checkpoint
     checkpoint_path = PRETRAINED_MODELS.get(args.resume, args.resume)
-    assert checkpoint_path.endswith(".pth"), "Not valid checkpoint"
+    assert checkpoint_path.endswith(".pth") or args.resume == "coco_original", "Not valid checkpoint"
 
-    # Loading saved checkpoint
-    loaded_weights = torch.load(checkpoint_path, map_location=device)['model']
-    model.load_state_dict(loaded_weights)
-    print('Loaded checkpoint from {}'.format(args.resume))
+    # Creating model
+    print("Creating model")
+    if checkpoint_path.endswith(".pth"):
+        num_classes = 2
+        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=False,
+                                                                     box_detections_per_img=args.max_dets,
+                                                                     box_score_thresh=args.thresh)
+
+        # get number of input features for the classifier
+        in_features = model.roi_heads.box_predictor.cls_score.in_features
+        # replace the pre-trained head with a new one
+        model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+
+        # Loading saved checkpoint
+        loaded_weights = torch.load(checkpoint_path, map_location=device)['model']
+        model.load_state_dict(loaded_weights)
+        print('Loaded checkpoint from {}'.format(args.resume))
+    elif args.resume == "coco_original":
+        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True,
+                                                                     box_detections_per_img=args.max_dets,
+                                                                     box_score_thresh=args.thresh)
 
     # Putting model to device and setting eval mode
     model.to(device)
@@ -175,7 +179,9 @@ if __name__ == "__main__":
     parser.add_argument('--resume', default='viped',
                         help='Resume from checkpoint. Possible values are viped (default), viped_mot17, viped_mot20, '
                              'viped_mot17_mb, viped_mot20_mb, viped_cocopersons_mb. '
-                             'Otherwise give the .pth path of your custom model')
+                             'Otherwise give the .pth path of your custom model. '
+                             'Finally, there is also the possibility to insert the value coco_original. In this case, '
+                             'the original model pre-trained on COCO (80 classes) is loaded. ')
     parser.add_argument('--dataset-name', default='MOT17Det',
                         help='Dataset name. Possible values are MOT17Det (default), MOT20Det')
     parser.add_argument('--device', default='cuda', help='Device. Default is cuda')
@@ -183,7 +189,7 @@ if __name__ == "__main__":
                         help='Images per gpu, the total batch size is $NGPU x batch_size')
     parser.add_argument('-j', '--workers', default=8, type=int, metavar='N',
                         help='Number of data loading workers (default: 8)')
-    parser.add_argument('--thresh', default=0.5, type=float, help="Box score threshold. Default 0.5")
+    parser.add_argument('--thresh', default=0.05, type=float, help="Box score threshold. Default 0.05")
     parser.add_argument('--max-dets', default=350, type=int, help="Max num of detections per image")
     parser.add_argument('--evaluation-apis', default='coco',
                         help="Which validator you want to use. Possible values are mot (default) and coco")
