@@ -146,70 +146,60 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
 
 
 def convert_to_coco_api(ds):
-    assert ds.dataset_name is not None, 'The dataset must have a name to be correctly cached!'
     coco_ds = COCO()
     ann_id = 0
     dataset = {'images': [], 'categories': [], 'annotations': []}
     categories = set()
-    cache_path = 'dataset_cache'
-    if not os.path.exists(cache_path):
-        os.makedirs(cache_path)
-    cache_file = os.path.join('dataset_cache', '{}.pkl'.format(ds.dataset_name))
-    if not os.path.exists(cache_file):
-        print("Converting to COCO API")
-        for img_idx in tqdm.trange(len(ds)):
-            # find better way to get target
-            # targets = ds.get_annotations(img_idx)
-            img, targets = ds[img_idx]
-            image_id = targets["image_id"].item()
-            img_dict = {}
-            img_dict['id'] = image_id
-            img_dict['height'] = img.shape[-2]
-            img_dict['width'] = img.shape[-1]
-            dataset['images'].append(img_dict)
-            bboxes = targets["boxes"]
-            bboxes[:, 2:] -= bboxes[:, :2]
-            bboxes = bboxes.tolist()
-            labels = targets['labels'].tolist()
-            areas = targets['area'].tolist()
-            iscrowd = targets['iscrowd'].tolist()
+
+    print("Converting to COCO API")
+    for img_idx in tqdm.trange(len(ds)):
+        # find better way to get target
+        # targets = ds.get_annotations(img_idx)
+        img, targets = ds[img_idx]
+        image_id = targets["image_id"].item()
+        img_dict = {}
+        img_dict['id'] = image_id
+        img_dict['height'] = img.shape[-2]
+        img_dict['width'] = img.shape[-1]
+        dataset['images'].append(img_dict)
+        bboxes = targets["boxes"]
+        bboxes[:, 2:] -= bboxes[:, :2]
+        bboxes = bboxes.tolist()
+        labels = targets['labels'].tolist()
+        areas = targets['area'].tolist()
+        iscrowd = targets['iscrowd'].tolist()
+        if 'masks' in targets:
+            masks = targets['masks']
+            # make masks Fortran contiguous for coco_mask
+            masks = masks.permute(0, 2, 1).contiguous().permute(0, 2, 1)
+        if 'keypoints' in targets:
+            keypoints = targets['keypoints']
+            keypoints = keypoints.reshape(keypoints.shape[0], -1).tolist()
+        if len(bboxes) == 1 and len(bboxes[0]) == 0:
+            num_objs = 0
+        else:
+            num_objs = len(bboxes)
+        for i in range(num_objs):
+            ann = {}
+            ann['image_id'] = image_id
+            ann['bbox'] = bboxes[i]
+            ann['category_id'] = labels[i]
+            categories.add(labels[i])
+            ann['area'] = areas[i]
+            ann['iscrowd'] = iscrowd[i]
+            ann['id'] = ann_id
             if 'masks' in targets:
-                masks = targets['masks']
-                # make masks Fortran contiguous for coco_mask
-                masks = masks.permute(0, 2, 1).contiguous().permute(0, 2, 1)
+                ann["segmentation"] = coco_mask.encode(masks[i].numpy())
             if 'keypoints' in targets:
-                keypoints = targets['keypoints']
-                keypoints = keypoints.reshape(keypoints.shape[0], -1).tolist()
-            if len(bboxes) == 1 and len(bboxes[0]) == 0:
-                num_objs = 0
-            else:
-                num_objs = len(bboxes)
-            for i in range(num_objs):
-                ann = {}
-                ann['image_id'] = image_id
-                ann['bbox'] = bboxes[i]
-                ann['category_id'] = labels[i]
-                categories.add(labels[i])
-                ann['area'] = areas[i]
-                ann['iscrowd'] = iscrowd[i]
-                ann['id'] = ann_id
-                if 'masks' in targets:
-                    ann["segmentation"] = coco_mask.encode(masks[i].numpy())
-                if 'keypoints' in targets:
-                    ann['keypoints'] = keypoints[i]
-                    ann['num_keypoints'] = sum(k != 0 for k in keypoints[i][2::3])
-                dataset['annotations'].append(ann)
-                ann_id += 1
+                ann['keypoints'] = keypoints[i]
+                ann['num_keypoints'] = sum(k != 0 for k in keypoints[i][2::3])
+            dataset['annotations'].append(ann)
+            ann_id += 1
         dataset['categories'] = [{'id': i} for i in sorted(categories)]
-        with open(cache_file, 'wb') as f:
-            pickle.dump(dataset, f)
-    else:
-        print('Loading cached ground truth...')
-        with open(cache_file, 'rb') as f:
-            dataset = pickle.load(f)
 
     coco_ds.dataset = dataset
     coco_ds.createIndex()
+
     return coco_ds
 
 
