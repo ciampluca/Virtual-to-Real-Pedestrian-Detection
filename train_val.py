@@ -13,6 +13,7 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from references.detection import utils
 from references.detection.engine import evaluate
 
+from models.fasterrcnn_resnet101_fpn import fasterrcnn_resnet101_fpn
 from utils import transforms as custom_T
 from datasets.custom_yolo_annotated_dataset import CustomYoloAnnotatedDataset
 from datasets.datasets_ensemble import EnsembleBatchSampler, DatasetsEnsemble
@@ -51,15 +52,23 @@ def get_transform(train=False):
 
 
 def get_model_detection(num_classes, args):
+    assert args.backbone == "resnet50" or args.backbone == "resnet101", "Backbone not supported"
+
     # replace the classifier with a new one, that has num_classes which is user-defined
     num_classes = num_classes + 1  # 1 class (person) + background
     backbone = None
 
     print('Initializing FasterRCNN detector...')
     # load a model pre-trained eventually pre-trained on COCO; default thresh: 0.05
-    faster_rcnn_model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=args.pretrained,
-                                                                             box_detections_per_img=args.max_dets,
-                                                                             box_score_thresh=args.thresh)
+    if args.backbone == "resnet50":
+        faster_rcnn_model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=args.pretrained,
+                                                                                 box_detections_per_img=args.max_dets,
+                                                                                 box_score_thresh=args.thresh)
+    else:   # resnet101
+        faster_rcnn_model = fasterrcnn_resnet101_fpn(pretrained=args.pretrained,
+                                                     box_detections_per_img=args.max_dets,
+                                                     box_score_thresh=args.thresh)
+
     detection_model = faster_rcnn_model
     # get number of input features for the classifier
     in_features = faster_rcnn_model.roi_heads.box_predictor.cls_score.in_features
@@ -319,6 +328,8 @@ if __name__ == "__main__":
     parser.add_argument('--thresh', default=0.05, type=float, help="Box score threshold (default 0.05)")
     parser.add_argument('--max-dets', default=350, type=int, help="Max num of detections per image")
     parser.add_argument('--pretrained', default=True, help="coco pretrained")
+    parser.add_argument('--backbone', default='resnet50', type=str, help="Backbone to be used. Possible values are "
+                                                                         "resnet50 (default) and resnet101")
     parser.add_argument('--freeze-backbone', default=False, help="Freeze the backbone during train")
     parser.add_argument('--lr', default=0.005, type=float,
                         help='Initial learning rate, 0.005 is the default value for training (fine tuning)')
