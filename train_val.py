@@ -123,21 +123,6 @@ def main(args):
             param.requires_grad = False
         print('Backbone is freezed!')
 
-    ##########################
-    # Construct an optimizer
-    params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(params,
-                                lr=args.lr,
-                                momentum=args.momentum,
-                                weight_decay=args.weight_decay,
-                                )
-
-    # and a learning rate scheduler
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
-                                                   step_size=args.lr_step_size,
-                                                   gamma=args.lr_gamma
-                                                   )
-
     ################################
     # Creating training datasets
     print("Loading training data")
@@ -221,6 +206,25 @@ def main(args):
     best_validation_ap = defaultdict(float)
     for d_name, dataset in val_datasets_dict.items():
         best_validation_ap[d_name] = 0.0
+
+    ##########################
+    # Construct an optimizer
+    params = [p for p in model.parameters() if p.requires_grad]
+    optimizer = torch.optim.SGD(params,
+                                lr=args.lr,
+                                momentum=args.momentum,
+                                weight_decay=args.weight_decay,
+                                )
+
+    # and a learning rate scheduler
+    if args.pretrained:
+        lr_step_size = min(50000, len(train_dataset))
+    else:
+        lr_step_size = min(50000, 2*len(train_dataset))
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
+                                                   step_size=lr_step_size,
+                                                   gamma=args.lr_gamma
+                                                   )
 
     ####################################
     # Defining a warm-up lr scheduler
@@ -336,7 +340,6 @@ if __name__ == "__main__":
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
     parser.add_argument('--wd', '--weight-decay', default=5e-4, type=float, metavar='W',
                         help='weight decay (default: 1e-4)', dest='weight_decay')
-    parser.add_argument('--lr-step-size', default=20000, type=int, help='Decrease lr every step-size epochs')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='Decrease lr by a factor of lr-gamma')
     parser.add_argument('--train-on', default='viped', type=str,
                         help="Which dataset use for training. Possible values are viped (default), MOT17Det, "
@@ -361,11 +364,6 @@ if __name__ == "__main__":
     parser.add_argument('--resume', default='', help='load a pre-trained model')
 
     args = parser.parse_args()
-
-    print('Using pretrained model: {}'.format(args.pretrained))
-    if args.pretrained:
-        args.lr_step_size /= 4
-    print('Learning rate step size: {}'.format(args.lr_step_size))
 
     main(args)
 
