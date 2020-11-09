@@ -2,6 +2,7 @@ import math
 import sys
 import os
 from collections import defaultdict
+import warnings
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -256,7 +257,12 @@ def main(args):
         train_step = checkpoint['iteration']
         for elem_name, elem in val_datasets_dict.items():
             if elem_name.startswith("best_"):
-                best_validation_ap[elem_name] = elem
+                d_name = elem_name.split("_")[1]
+                if d_name in best_validation_ap:
+                    best_validation_ap[d_name] = elem
+                else:
+                    warnings.warn("The dataset {} was not used in the previous training".format(d_name))
+                    best_validation_ap[d_name] = 0.0
 
     ################
     ################
