@@ -88,7 +88,8 @@ def save_checkpoint(data, path, best_model=None):
     if best_model:
         outfile = 'best_model_{}.pth'.format(best_model)
     else:
-        outfile = 'checkpoint_epoch_{}_iteration_{}.pth'.format(epoch, iteration)
+        # outfile = 'checkpoint_epoch_{}_iteration_{}.pth'.format(epoch, iteration)
+        outfile = 'last_checkpoint.pth'
     outfile = os.path.join(path, outfile)
     torch.save(data, outfile)
 
@@ -102,8 +103,9 @@ def main(args):
     # Creating tensorboard writer
     writer = SummaryWriter(comment="_" + args.tensorboard_file_name)
 
-    ####################
+    #######################
     # Creating model
+    #######################
     print("Creating model")
     model, backbone = get_model_detection(num_classes=1, args=args)
 
@@ -111,18 +113,15 @@ def main(args):
     model.to(device)
     model.train()
 
-    # Eventually resuming a pre-trained model
-    if args.resume:
-        print("Resuming pre-trained model")
-        checkpoint = torch.load(args.resume)
-        model.load_state_dict(checkpoint['model'])
-
     # Freeze the backbone parameters, if needed
     if backbone is not None and args.freeze_backbone:
         for param in backbone.parameters():
             param.requires_grad = False
         print('Backbone is freezed!')
 
+    #####################################
+    # Creating datasets and dataloaders
+    #####################################
     ################################
     # Creating training datasets
     print("Loading training data")
@@ -207,8 +206,11 @@ def main(args):
     for d_name, dataset in val_datasets_dict.items():
         best_validation_ap[d_name] = 0.0
 
+    #######################################
+    # Defining optimizer and LR scheduler
+    #######################################
     ##########################
-    # Construct an optimizer
+    # Constructing an optimizer
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(params,
                                 lr=args.lr,
@@ -218,7 +220,7 @@ def main(args):
 
     # and a learning rate scheduler
     if args.pretrained:
-        lr_step_size = min(50000, len(train_dataset))
+        lr_step_size = min(30000, len(train_dataset))
     else:
         lr_step_size = min(50000, 2*len(train_dataset))
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
@@ -226,18 +228,40 @@ def main(args):
                                                    gamma=args.lr_gamma
                                                    )
 
-    ####################################
     # Defining a warm-up lr scheduler
     warmup_iters = min(1000, len(train_dataloader) - 1)
     warmup_factor = 1. / 1000
     warmup_lr_scheduler = utils.warmup_lr_scheduler(optimizer, warmup_iters, warmup_factor)
 
+    #############################
+    # Resuming a model
+    #############################
+    start_epoch = 0
+    train_step = -1
+    # Eventually resuming a pre-trained model
+    if args.resume:
+        print("Resuming pre-trained model")
+        pre_trained_model = torch.load(args.resume)
+        model.load_state_dict(pre_trained_model['model'])
+
+    # Eventually resuming from a saved checkpoint
+    if args.resume_from_checkpoint:
+        print("Resuming pre-trained model")
+        checkpoint = torch.load(args.resume_from_checkpoint)
+        model.load_state_dict(checkpoint['model'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+        warmup_lr_scheduler.load_state_dict(checkpoint['warmup_lr_scheduler'])
+        start_epoch = checkpoint['epoch']
+        train_step = checkpoint['iteration']
+        for elem_name, elem in val_datasets_dict.items():
+            if elem_name.startswith("best_"):
+                best_validation_ap[elem_name] = elem
+
     ################
     ################
     # Training
     print("Start training")
-    start_epoch = 0
-    train_step = -1
     for epoch in range(start_epoch, args.epochs):
         model.train()
         metric_logger = utils.MetricLogger(delimiter="  ")
@@ -308,7 +332,7 @@ def main(args):
                         }, writer.get_logdir(), best_model=val_name)
 
                 # Saving last model
-                save_checkpoint({
+                checkpoint_dict = {
                     'model': model.state_dict(),
                     'optimizer': optimizer.state_dict(),
                     'lr_scheduler': lr_scheduler.state_dict(),
@@ -316,7 +340,12 @@ def main(args):
                         warmup_lr_scheduler.state_dict() if warmup_lr_scheduler is not None else None,
                     'epoch': epoch,
                     'iteration': train_step,
-                }, writer.get_logdir())
+                }
+                for d_name, dataset in val_datasets_dict.items():
+                    checkpoint_dict["best_{}_ap".format(d_name)] = best_validation_ap[d_name]
+                save_checkpoint(
+                    checkpoint_dict,
+                    writer.get_logdir())
 
                 # Setting again to train mode
                 model.train()
@@ -328,10 +357,11 @@ def main(args):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
+
     parser.add_argument('--device', default='cuda', help='Device. Default is cuda')
     parser.add_argument('--thresh', default=0.05, type=float, help="Box score threshold (default 0.05)")
     parser.add_argument('--max-dets', default=350, type=int, help="Max num of detections per image")
-    parser.add_argument('--pretrained', default=True, help="coco pretrained")
+    parser.add_argument('--pretrained', default=True, help="network pretrained or not")
     parser.add_argument('--backbone', default='resnet50', type=str, help="Backbone to be used. Possible values are "
                                                                          "resnet50 (default) and resnet101")
     parser.add_argument('--freeze-backbone', default=False, help="Freeze the backbone during train")
