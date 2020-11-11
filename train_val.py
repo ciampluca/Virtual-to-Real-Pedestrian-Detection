@@ -102,7 +102,11 @@ def main(args):
     device = torch.device(args.device)
 
     # Creating tensorboard writer
-    writer = SummaryWriter(comment="_" + args.tensorboard_file_name)
+    if args.resume_from_checkpoint:
+        checkpoint = torch.load(args.resume_from_checkpoint)
+        writer = SummaryWriter(log_dir=os.path.join('./runs', checkpoint['tensorboard_working_dir']))
+    else:
+        writer = SummaryWriter(comment="_" + args.tensorboard_file_name)
 
     #######################
     # Creating model
@@ -247,7 +251,7 @@ def main(args):
 
     # Eventually resuming from a saved checkpoint
     if args.resume_from_checkpoint:
-        print("Resuming pre-trained model")
+        print("Resuming from a checkpoint")
         checkpoint = torch.load(args.resume_from_checkpoint)
         model.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
@@ -346,6 +350,7 @@ def main(args):
                         warmup_lr_scheduler.state_dict() if warmup_lr_scheduler is not None else None,
                     'epoch': epoch,
                     'iteration': train_step,
+                    'tensorboard_working_dir': writer.get_logdir(),
                 }
                 for d_name, dataset in val_datasets_dict.items():
                     checkpoint_dict["best_{}_ap".format(d_name)] = best_validation_ap[d_name]
