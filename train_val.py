@@ -104,7 +104,7 @@ def main(args):
     # Creating tensorboard writer
     if args.resume_from_checkpoint:
         checkpoint = torch.load(args.resume_from_checkpoint)
-        writer = SummaryWriter(log_dir=os.path.join('./runs', checkpoint['tensorboard_working_dir']))
+        writer = SummaryWriter(log_dir=checkpoint['tensorboard_working_dir'])
     else:
         writer = SummaryWriter(comment="_" + args.tensorboard_file_name)
 
@@ -403,6 +403,8 @@ if __name__ == "__main__":
     parser.add_argument('--tensorboard-file-name', default="default_experiment_name",
                         help='name of the tensorboard file')
     parser.add_argument('--resume', default='', help='load a pre-trained model')
+    parser.add_argument('--resume-from-checkpoint', default='',
+                        help='load a saved checkpoint (useful for resuming interrupted training)')
 
     args = parser.parse_args()
 
