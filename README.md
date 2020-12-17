@@ -63,7 +63,7 @@ python scripts_prepare_data/prepare_mot_datasets.py data/MOT17Det/
 wget https://motchallenge.net/data/MOT20Det.zip
 unzip MOT20Det.zip -d data
 rm MOT20Det.zip
-python scripts_prepare_data/prepare_mot_datasets.py data/MOT20Det/
+python scripts_prepare_data/prepare_mot_datasets.py data/MOT20Det/ --mot_dataset MOT20
 ```
 - COCOPersons Dataset
 ```
@@ -77,12 +77,10 @@ files of the annotations.
 Annotations of the bounding boxes are in the format *[x_center, y_center, height, width]* relative to the image size.
 
 If you want, you can put the datasets in a different folder than the `data` one. In this case, you have to modify the 
-train_val.py and test.py files accordingly.
+config.yaml file accordingly.
 
 
 ## Evaluate
-Inside the `checkpoints` folder, you can find some pre-trained model.
-
 COMING SOON
 
 

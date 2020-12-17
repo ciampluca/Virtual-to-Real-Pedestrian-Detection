@@ -1,11 +1,9 @@
 import os
 import tqdm
-import datetime
+import yaml
 
 import torch
 from torch.utils.data import DataLoader
-
-import torchvision
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
 from references.detection import utils
@@ -13,65 +11,51 @@ from references.detection.engine import evaluate as evaluate_coco
 
 from utils import transforms as custom_T
 from datasets.custom_yolo_annotated_dataset import CustomYoloAnnotatedDataset
-
-
-PRETRAINED_MODELS = {
-    "viped": "./checkpoints/model_pretrained_viped.pth",
-    "viped_mot17": "./checkpoints/model_pretrained_viped_mot17.pth",
-    "viped_mot20": "./checkpoints/model_pretrained_viped_mot20.pth",
-    "viped_mot17_mb": "./checkpoints/model_pretrained_viped_mot17_mb.pth",
-    "viped_mot20_mb": "./checkpoints/model_pretrained_viped_mot20_mb.pth",
-    "viped_cocopersons_mb": "./checkpoints/model_pretrained_viped_cocopersons_mb.pth",
-}
-
-DATASETS = {
-    "viped": "./data/viped",
-    "MOT17Det": "./data/MOT17Det",
-    "MOT20Det": "./data/MOT20Det",
-    "COCOPersons": "./data/COCOPersons",
-}
-
-
-def get_dataset(name, transform, percentage=None, split="train"):
-    if name in DATASETS:
-        dataset_root_path = DATASETS[name]
-        dataset = CustomYoloAnnotatedDataset(dataset_root_path, transform, dataset_name=name, percentage=percentage,
-                                             split=split)
-    else:
-        raise ValueError("Non existing dataset")
-
-    return dataset
+from models.faster_rcnn import fasterrcnn_resnet50_fpn, fasterrcnn_resnet101_fpn
 
 
 def get_transform():
     transforms = []
 
     transforms.append(custom_T.ToTensor())
+    transforms.append(custom_T.FasterRCNNResizer())
 
     return custom_T.Compose(transforms)
 
 
-def evaluate(args, model, dataset, eval_apis, folder_name):
-    # Creating data loader
-    data_loader = DataLoader(
-        dataset,
-        batch_size=args.batch_size,
-        shuffle=False,
-        num_workers=args.workers,
-        collate_fn=dataset.standard_collate_fn
-    )
+def evaluate(cfg, model, dataloader, dataset_name, split, args):
+    # Retrieving model name
+    model_name = args.load_model
 
-    if eval_apis == 'coco':
-        filename = os.path.join(folder_name, '{}.txt'.format(data_loader.dataset.dataset_name))
-        evaluate_coco(model, data_loader, device=args.device, categories=[1], save_on_file=filename,
-                      dataset_name=dataset.dataset_name, max_dets=args.max_dets)
-    elif eval_apis == 'mot':
-        dirname = os.path.join(folder_name, data_loader.dataset.dataset_name)
-        os.makedirs(dirname)
-        evaluate_mot(model, data_loader, device=args.device, save_dir=dirname)
+    # Retrieving evaluation apis
+    eval_api = cfg["evaluation_api"]
+    assert eval_api == "coco" or eval_api == "mot", "Not valid evaluation apis"
+    if eval_api == "coco" and split == "test":
+        print("coco eval api not yet implemented for test split. Please use val split or mot eval api.")
+        exit(1)
+
+    # Retrieving folder result
+    results_folder = cfg['results_folder']
+    if not os.path.exists(results_folder):
+        os.makedirs(results_folder)
+
+    if eval_api == 'coco':
+        filename = os.path.join(results_folder, '{}_{}_{}.txt'.
+                                format(dataset_name, ''.join(model_name.split("_")), "coco-eval"))
+        evaluate_coco(model, dataloader, device=next(model.parameters()).device, categories=[1], save_on_file=filename,
+                      max_dets=cfg['max_dets_per_image'])
+    elif eval_api == 'mot':
+        if 'joint' in dataset_name:
+            pass
+        results_folder = os.path.join(results_folder, "{}_{}_{}".
+                                      format(dataset_name, ''.join(model_name.split("_")), "mot-eval"))
+        if not os.path.exists(results_folder):
+            os.makedirs(results_folder)
+        evaluate_mot(model, dataloader, device=next(model.parameters()).device,
+                     dataset_name=dataset_name, save_dir=results_folder)
 
 
-def evaluate_mot(model, data_loader, device, save_dir=None):
+def evaluate_mot(model, data_loader, device, dataset_name=None, save_dir=None):
     detections_per_subseq = {}
 
     for batch_i, (imgs, _) in enumerate(tqdm.tqdm(data_loader,
@@ -82,8 +66,7 @@ def evaluate_mot(model, data_loader, device, save_dir=None):
             detections = model(imgs)
 
         # Get image file names for this batch
-        img_filenames = [data_loader.dataset.imgs_id_path[batch_i*len(imgs) + i]
-                         for i in range(len(imgs))]
+        img_filenames = [data_loader.dataset.images[dataset_name][batch_i*len(imgs) + i] for i in range(len(imgs))]
 
         # iterate over images on this batch
         for det, img_filename in zip(detections, img_filenames):
@@ -115,87 +98,107 @@ def main(args):
     utils.init_distributed_mode(args)
     print(args)
 
-    device = torch.device(args.device)
+    # Opening YAML cfg config file
+    with open(args.cfg_file, 'r') as stream:
+        try:
+            cfg_file = yaml.safe_load(stream)
+        except yaml.YAMLError as exc:
+            print(exc)
 
-    # Retrieving checkpoint
-    checkpoint_path = PRETRAINED_MODELS.get(args.resume, args.resume)
-    assert checkpoint_path.endswith(".pth") or args.resume == "coco_original", "Not valid checkpoint"
+    # Retrieving cfg
+    test_cfg = cfg_file['test']
+    model_cfg = cfg_file['model']
+    data_cfg = cfg_file['dataset']
+
+    # Setting device
+    device = torch.device(model_cfg['device'])
+
+    # Retrieving pretrained model
+    available_pretrained_models = test_cfg['pretrained_models']
+    pretrained_model_name = args.load_model
+    assert pretrained_model_name in available_pretrained_models.keys(), \
+        "Pretrained model {} not available".format(pretrained_model_name)
+    checkpoint_path = available_pretrained_models[pretrained_model_name]
 
     # Creating model
     print("Creating model")
-    if checkpoint_path.endswith(".pth"):
-        num_classes = 2
-        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=False,
-                                                                     box_detections_per_img=args.max_dets,
-                                                                     box_score_thresh=args.thresh)
+    if "50" in pretrained_model_name:
+        model = fasterrcnn_resnet50_fpn(
+            pretrained=False,
+            pretrained_backbone=False,
+            box_detections_per_img=model_cfg["max_dets_per_image"],
+            box_nms_thresh=model_cfg["nms"],
+            model_dir=model_cfg["cache_folder"],
+        )
+    else:
+        model = fasterrcnn_resnet101_fpn(
+            pretrained=False,
+            pretrained_backbone=False,
+            box_detections_per_img=model_cfg["max_dets_per_image"],
+            box_score_thresh=cfg["det_thresh"],
+            box_nms_thresh=model_cfg["nms"],
+            model_dir=model_cfg["cache_folder"],
+        )
 
-        # get number of input features for the classifier
+    # Loading weights
+    if not "coco" in pretrained_model_name:
+        num_classes = 1 + 1  # num classes + background
+        # Getting number of input features for the classifier
         in_features = model.roi_heads.box_predictor.cls_score.in_features
-        # replace the pre-trained head with a new one
+        # Replacing the pre-trained head with a new one
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
-        # Loading saved checkpoint
-        loaded_weights = torch.load(checkpoint_path, map_location=device)['model']
-        model.load_state_dict(loaded_weights)
-        print('Loaded checkpoint from {}'.format(args.resume))
-    elif args.resume == "coco_original":
-        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True,
-                                                                     box_detections_per_img=args.max_dets,
-                                                                     box_score_thresh=args.thresh)
+    if checkpoint_path.startswith('http://') or checkpoint_path.startswith('https://'):
+        checkpoint = torch.hub.load_state_dict_from_url(
+            checkpoint_path, map_location='cpu', model_dir=model_cfg["cache_folder"])
+    else:
+        checkpoint = torch.load(checkpoint_path, map_location='cpu')
+
+    if 'model' in checkpoint.keys():
+        checkpoint = checkpoint['model']
+    model.load_state_dict(checkpoint)
 
     # Putting model to device and setting eval mode
     model.to(device)
     model.eval()
 
-    # Defining dataset split and evaluation apis
-    split = args.dataset_split
-    eval_apis = args.evaluation_apis
-    assert split == "test" or split == "val", "Not valid dataset split"
-    assert eval_apis == "coco" or eval_apis == "mot", "Not valid evaluation apis"
-    if eval_apis == "coco" and split == "test":
-        print("COCO eval apis not yet implemented for test subset. Please use val subset or MOT eval apis.")
-        exit(1)
+    # Retrieving phase and some data parameters
+    phase = test_cfg['phase']
+    assert phase == "test" or phase == "val", "Not valid phase"
+    data_root = data_cfg['root']
+    datasets_names = data_cfg[phase]
 
-    # Creating dataset
-    dataset = get_dataset(args.dataset_name, get_transform(), split=split)
+    # Creating dataset(s) and dataloader(s)
+    for dataset_name, dataset_cfg in datasets_names.items():
+        # Creating dataset
+        dataset = CustomYoloAnnotatedDataset(
+            data_root,
+            {dataset_name: dataset_cfg},
+            transforms=get_transform(),
+            phase=phase
+        )
+        dataloader = DataLoader(
+            dataset,
+            batch_size=test_cfg['batch_size'],
+            shuffle=False,
+            num_workers=test_cfg['num_workers'],
+            collate_fn=dataset.standard_collate_fn
+        )
 
-    # Defining folder name that will contain results
-    base_name = "{}_{}-evaluation_thresh{}_on{}".\
-        format(datetime.datetime.now().strftime("%Y-%m-%d_%H-%M"), eval_apis, args.thresh, args.dataset_name)
-    res_folder_name = os.path.join("./test_results", base_name)
-
-    if not os.path.exists(res_folder_name):
-        os.makedirs(res_folder_name)
-
-    # Evaluate
-    evaluate(args, model, dataset, eval_apis, res_folder_name)
+        # Evaluate
+        evaluate(test_cfg, model, dataloader, dataset_name, split=dataset_cfg.rsplit(".", 1)[1], args=args)
 
     print('DONE!')
 
 
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--resume', default='viped',
-                        help='Resume from checkpoint. Possible values are viped (default), viped_mot17, viped_mot20, '
-                             'viped_mot17_mb, viped_mot20_mb, viped_cocopersons_mb. '
-                             'Otherwise give the .pth path of your custom model. '
-                             'Finally, there is also the possibility to insert the value coco_original. In this case, '
-                             'the original model pre-trained on COCO (80 classes) is loaded. ')
-    parser.add_argument('--dataset-name', default='MOT17Det',
-                        help='Dataset name. Possible values are MOT17Det (default), MOT20Det')
-    parser.add_argument('--device', default='cuda', help='Device. Default is cuda')
-    parser.add_argument('-b', '--batch-size', default=1, type=int,
-                        help='Images per gpu, the total batch size is $NGPU x batch_size')
-    parser.add_argument('-j', '--workers', default=8, type=int, metavar='N',
-                        help='Number of data loading workers (default: 8)')
-    parser.add_argument('--thresh', default=0.05, type=float, help="Box score threshold. Default 0.05")
-    parser.add_argument('--max-dets', default=350, type=int, help="Max num of detections per image")
-    parser.add_argument('--evaluation-apis', default='coco',
-                        help="Which validator you want to use. Possible values are mot (default) and coco")
-    parser.add_argument('--dataset-split', default='test',
-                        help="Which dataset split you want to use. Possible values are test (default) and val. "
-                             "GT are available only for the val subset")
+
+    parser.add_argument('--cfg-file', default='./cfg/config.yaml', help="YAML config file path")
+    parser.add_argument('--load_model', default='coco_resnet_50',
+                        help='Load a model. Possible values are contained in the cfg file (test section) ')
 
     args = parser.parse_args()
 

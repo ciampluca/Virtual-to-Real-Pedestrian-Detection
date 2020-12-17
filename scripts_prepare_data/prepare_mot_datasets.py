@@ -9,6 +9,12 @@ from random import shuffle
 def main(args):
     print(args)
 
+    assert args.mot_dataset == "MOT17" or args.mot_dataset == "MOT20", "Possible values for mot_dataset are MOT17 or MOT20"
+    if args.mot_dataset == "MOT17":
+        VERTICAL_VAL_SUBSETS = ["MOT17-09"]
+    else:
+        VERTICAL_VAL_SUBSETS = ["MOT20-01", "MOT20-05"]
+
     # Training data
     mot_train_root_folder = os.path.join(args.mot_root_dir, "train")
     train_seq_folders = os.listdir(mot_train_root_folder)
@@ -46,8 +52,6 @@ def main(args):
                 print('Image name: {}'.format(img))
                 exit(1)
             filename = os.path.join(train_bbs_folder, new_ann_name)
-            if args.skip and os.path.isfile(filename):
-                continue
             cur_detections = [d for d in v if d[0] == img_id and d[7] == 1]
 
             with open(filename, 'w') as f:
@@ -80,10 +84,14 @@ def main(args):
     if not os.path.exists(val_bbs_folder):
         os.makedirs(val_bbs_folder)
     train_imgs = os.listdir(train_imgs_folder)
-    shuffle(train_imgs)
-    num_total_imgs = len(train_imgs)
-    num_val_imgs = int((num_total_imgs / 100) * 20)
-    val_imgs = train_imgs[:num_val_imgs]
+    if args.vertical_val_split:
+        for val_subset in VERTICAL_VAL_SUBSETS:
+            val_imgs = [img for img in train_imgs if img.startswith(val_subset)]
+    else:
+        shuffle(train_imgs)
+        num_total_imgs = len(train_imgs)
+        num_val_imgs = int((num_total_imgs / 100) * 20)
+        val_imgs = train_imgs[:num_val_imgs]
     for val_img in val_imgs:
         img_path = os.path.join(train_imgs_folder, val_img)
         move(img_path, os.path.join(val_imgs_folder, val_img))
@@ -121,8 +129,9 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('mot_root_dir', type=str, help='MOT root directory')
-    parser.add_argument('--skip', action='store_true', default=False)
     parser.add_argument('--crop-bb', action='store_true', default=False)
+    parser.add_argument('--vertical_val_split', action='store_true', default=True)
+    parser.add_argument('--mot_dataset', default="MOT17", help="Possible values are MOT17 and MOT20")
 
     args = parser.parse_args()
 

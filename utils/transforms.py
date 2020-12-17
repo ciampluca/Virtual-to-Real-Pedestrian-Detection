@@ -1,9 +1,8 @@
 from imgaug import augmenters as iaa
 from imgaug.augmentables.bbs import BoundingBox
-from torchvision.models.detection.transform import resize_boxes
 
 import torch
-
+from torchvision.models.detection.transform import resize_boxes
 from torchvision.transforms import functional as F
 
 
