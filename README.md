@@ -85,15 +85,15 @@ COMING SOON
 
 
 ## Train
-In order to train the model using the ViPeD dataset and validate over all the real-world datasets, issue the following 
-command:
+In order to train the model using the ViPeD dataset and validate over the two real-world datasets MOT17Det and MOT20Det, 
+issue the following command:
 ```
-python train_val.py --train-on viped --validate-on all --tensorboard-file-name train_viped_validate_all
+python train_val.py --cfg_file 
 ```
 If you want to train the model using the Mixed-Batch Domain Adaptation Technique, for example using the ViPeD and the
 MOT17Det datasets, issue the following command:
 ```
-python train_val.py --train-on viped,MOT17Det --validate-on all --tensorboard-file-name train_mixedBatch_vipedAndMOT17DET_validate_all
+python train_val.py --cfg_file viped_training_cgf.yaml
 ```
 Many other options are available. Issue the following command to see them:
 ```

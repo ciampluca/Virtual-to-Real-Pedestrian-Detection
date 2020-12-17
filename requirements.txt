@@ -4,4 +4,4 @@ imgaug
 tqdm
 tensorboard
 pycocotools
-yaml
+pyyaml

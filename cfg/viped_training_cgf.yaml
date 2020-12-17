@@ -1,0 +1,40 @@
+dataset:
+    root: "./data"
+
+    train:
+        viped         : "ViPeD.train"
+
+    val:
+        mot17: "MOT17Det.train"
+        mot20: "MOT20Det.train"
+
+
+model:
+    device               : "cuda"    # cpu or cuda
+    backbone             : "resnet50"    # resnet50 or resnet101
+    backbone_pretrained  : true   # on ImageNet
+    coco_model_pretrained: true   # on COCO; if true, no need to load the pretrained backbone
+    cache_folder         : "./model_zoo"
+    max_dets_per_image   : 350
+    nms                  : 0.5
+    det_thresh           : 0.05
+    freeze_backbone      : false
+
+
+training:
+    batch_size          : 4
+    num_workers         : 4
+    epochs              : 50
+    checkpoint          : ""      # checkpoint to resume, useful for starting from an interrupted training
+    pretrained_model    : ""      # pre-trained model to resume
+    tensorboard_filename: "faster_rcnn_resnet50_coco_ViPeDFineTuning_MOT17MOT20DetVal_maxDets350_thresh005_batchSize4"
+    lr                  : 0.005
+    momentum            : 0.9
+    weight_decay        : 0.0005
+    lr_gamma            : 0.1
+    mixed_batch         : false
+    tgt_images_in_batch : 0
+    print_freq          : 100
+    save_freq           : 1000
+    log_loss            : 20
+    percentage_val      : 50    # 1 - 100

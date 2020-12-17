@@ -392,7 +392,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description=__doc__)
 
-    parser.add_argument('--cfg-file', default='./cfg/config.yaml', help="YAML config file path")
+    parser.add_argument('--cfg-file', required=True, help="YAML config file path")
 
     args = parser.parse_args()
 
