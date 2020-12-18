@@ -65,14 +65,8 @@ unzip MOT20Det.zip -d data
 rm MOT20Det.zip
 python scripts_prepare_data/prepare_mot_datasets.py data/MOT20Det/ --mot_dataset MOT20
 ```
-- COCOPersons Dataset
-```
-wget http://datino.isti.cnr.it/COCOPersons.zip
-unzip COCOPersons.zip -d data
-rm COCOPersons.zip
-```
-You should now have 4 folders in the `data` directory, corresponding to 4 different datasets (ViPeD, MOT17Det, MOT20Det
-and COCOPersons). They should have a common structure: `imgs` containing images and `bbs` containing the associated txt 
+
+You should now have 3 folders in the `data` directory, corresponding to 3 different datasets (ViPeD, MOT17Det and MOT20Det). They should have a common structure: `imgs` containing images and `bbs` containing the associated txt 
 files of the annotations. 
 Annotations of the bounding boxes are in the format *[x_center, y_center, height, width]* relative to the image size.
 
@@ -94,6 +88,11 @@ If you want to train the model using the Mixed-Batch Domain Adaptation Technique
 MOT17Det datasets, issue the following command:
 ```
 python train_val.py --cfg-file cfg/viped_training_mb_mot17_resnet50.yaml
+```
+If you want to fine-tune a model already trained with our ViPeD, exploiting for example the MOT20Det 
+dataset, issue the following command:
+```
+python train_val.py --cfg-file cfg/mot20_trainingFromViped_resnet50.yaml
 ```
 Many other cfg files are available, see the `cfg` folder. 
 

@@ -127,6 +127,7 @@ def main(args):
             pretrained=False,
             pretrained_backbone=False,
             box_detections_per_img=model_cfg["max_dets_per_image"],
+            box_score_thresh=model_cfg["det_thresh"],
             box_nms_thresh=model_cfg["nms"],
             model_dir=model_cfg["cache_folder"],
         )
@@ -135,7 +136,7 @@ def main(args):
             pretrained=False,
             pretrained_backbone=False,
             box_detections_per_img=model_cfg["max_dets_per_image"],
-            box_score_thresh=cfg["det_thresh"],
+            box_score_thresh=model_cfg["det_thresh"],
             box_nms_thresh=model_cfg["nms"],
             model_dir=model_cfg["cache_folder"],
         )
