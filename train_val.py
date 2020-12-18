@@ -264,7 +264,11 @@ def main(args):
     # Eventually resuming a pre-trained model
     if train_cfg['pretrained_model']:
         print("Resuming pre-trained model")
-        pre_trained_model = torch.load(train_cfg['pretrained_model'])
+        if train_cfg['pretrained_model'].startswith('http://') or train_cfg['pretrained_model'].startswith('https://'):
+            pre_trained_model = torch.hub.load_state_dict_from_url(
+                train_cfg['pretrained_model'], map_location='cpu', model_dir=model_cfg["cache_folder"])
+        else:
+            pre_trained_model = torch.load(train_cfg['pretrained_model'], map_location='cpu')
         model.load_state_dict(pre_trained_model['model'])
 
     # Eventually resuming from a saved checkpoint
