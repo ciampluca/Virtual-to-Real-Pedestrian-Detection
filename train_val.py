@@ -155,37 +155,36 @@ def main(args):
     train_datasets_names = data_cfg['train']
 
     if train_cfg['mixed_batch']:
-        if train_cfg['tgt_images_in_batch'] <= 0:
-            assert train_cfg['tgt_images_in_batch'] > 0, \
-                "Using mixed training. You need to specify the tgt_images_in_batch parameter!"
-            assert len(train_datasets_names) == 2, "Using mixed training, you need to specify two datasets, " \
-                                                   "the first one as the source while the second as the target"
-            source_dataset = CustomYoloAnnotatedDataset(
-                data_root,
-                {train_datasets_names.keys()[0], train_datasets_names.values()[0]},
-                transforms=get_transform(train=True),
-                phase='train'
-            )
-            target_dataset = CustomYoloAnnotatedDataset(
-                data_root,
-                {train_datasets_names.keys()[1], train_datasets_names.values()[1]},
-                transforms=get_transform(train=True),
-                phase='train'
-            )
-            train_dataset = DatasetsEnsemble(source_dataset=source_dataset, target_dataset=target_dataset)
-            train_dataloader = DataLoader(
-                train_dataset,
-                collate_fn=train_dataset.source_dataset.standard_collate_fn,
-                num_workers=train_cfg['num_workers'],
-                batch_sampler=EnsembleBatchSampler(train_dataset,
-                                                   batch_size=train_cfg['batch_size'],
-                                                   shuffle=True,
-                                                   tgt_imgs_in_batch=train_cfg['tgt_images_in_batch'])
-            )
-            print('Using mixed training datasets. Source: {}, Target: {}. In every batch, {}/{} are from {}'.format(
-                train_datasets_names.keys()[0], train_datasets_names.keys()[1], train_cfg['tgt_images_in_batch'],
-                train_cfg['batch_size'], train_datasets_names.keys()[1]
-            ))
+        assert train_cfg['tgt_images_in_batch'] > 0, \
+            "Using mixed training. You need to specify the tgt_images_in_batch parameter!"
+        assert len(train_datasets_names) == 2, "Using mixed training, you need to specify two datasets, " \
+                                               "the first one as the source while the second as the target"
+        source_dataset = CustomYoloAnnotatedDataset(
+            data_root,
+            {list(train_datasets_names.keys())[0]: list(train_datasets_names.values())[0]},
+            transforms=get_transform(train=True),
+            phase='train'
+        )
+        target_dataset = CustomYoloAnnotatedDataset(
+            data_root,
+            {list(train_datasets_names.keys())[1]: list(train_datasets_names.values())[1]},
+            transforms=get_transform(train=True),
+            phase='train'
+        )
+        train_dataset = DatasetsEnsemble(source_dataset=source_dataset, target_dataset=target_dataset)
+        train_dataloader = DataLoader(
+            train_dataset,
+            collate_fn=train_dataset.source_dataset.standard_collate_fn,
+            num_workers=train_cfg['num_workers'],
+            batch_sampler=EnsembleBatchSampler(train_dataset,
+                                               batch_size=train_cfg['batch_size'],
+                                               shuffle=True,
+                                               tgt_imgs_in_batch=train_cfg['tgt_images_in_batch'])
+        )
+        print('Using mixed training datasets. Source: {}, Target: {}. In every batch, {}/{} are from {}'.format(
+            list(train_datasets_names.keys())[0], list(train_datasets_names.keys())[1], train_cfg['tgt_images_in_batch'],
+            train_cfg['batch_size'], list(train_datasets_names.keys())[1]
+        ))
     else:
         train_dataset = CustomYoloAnnotatedDataset(
             data_root,
