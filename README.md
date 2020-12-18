@@ -54,7 +54,7 @@ chmod -R 755 data/ViPeD
 - MOT17Det Dataset (**[MOT17Det](https://motchallenge.net/data/MOT17Det/)**)
 ```
 wget https://motchallenge.net/data/MOT17Det.zip
-unzip MOT17Det.zip -d data
+unzip MOT17Det.zip -d data/MOT17Det
 rm MOT17Det.zip
 python scripts_prepare_data/prepare_mot_datasets.py data/MOT17Det/
 ```
@@ -88,17 +88,16 @@ COMING SOON
 In order to train the model using the ViPeD dataset and validate over the two real-world datasets MOT17Det and MOT20Det, 
 issue the following command:
 ```
-python train_val.py --cfg_file 
+python train_val.py --cfg-file cfg/viped_training_cgf_resnet50.yaml
 ```
 If you want to train the model using the Mixed-Batch Domain Adaptation Technique, for example using the ViPeD and the
 MOT17Det datasets, issue the following command:
 ```
-python train_val.py --cfg_file viped_training_cgf.yaml
+python train_val.py --cfg_file --cfg-file cfg/viped_training mb_mot17_cgf_resnet50.yaml
 ```
-Many other options are available. Issue the following command to see them:
-```
-python train_val.py --help
-```
+Many other cfg files are available, see the `cfg` folder. 
+
+You can also create your personal cfg customizing the available options. 
 
 
 ## Citations

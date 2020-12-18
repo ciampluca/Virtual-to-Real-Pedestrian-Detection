@@ -1,12 +1,17 @@
+# Cfg file for training the detector having a resnet50 backbone exploiting our ViPeD dataset, using our Mixed-Batch
+# Domain Adaptation technique. In this phase, the batch is composed by a part of the synthetic data and by another part
+# of the training split of the real-world dataset MOT17Det.
+# Results are validated over the val split of the real-world dataset MOT17Det.
+
+
 dataset:
     root: "./data"
 
     train:
-        viped         : "ViPeD.train"
-
-    val:
+        viped: "ViPeD.train"
         mot17: "MOT17Det.train"
-        mot20: "MOT20Det.train"
+    val:
+        mot17: "MOT17Det.val"
 
 
 model:
@@ -22,19 +27,19 @@ model:
 
 
 training:
-    batch_size          : 4
+    batch_size          : 3
     num_workers         : 4
     epochs              : 50
     checkpoint          : ""      # checkpoint to resume, useful for starting from an interrupted training
     pretrained_model    : ""      # pre-trained model to resume
-    tensorboard_filename: "faster_rcnn_resnet50_coco_ViPeDFineTuning_MOT17MOT20DetVal_maxDets350_thresh005_batchSize4"
+    tensorboard_filename: "faster_rcnn_resnet50_coco_ViPeD&MOT17DetMB_MOT17DetVal_maxDets350_thresh005_batchSize3_2vs1"
     lr                  : 0.005
     momentum            : 0.9
     weight_decay        : 0.0005
     lr_gamma            : 0.1
-    mixed_batch         : false
-    tgt_images_in_batch : 0
+    mixed_batch         : true
+    tgt_images_in_batch : 1
     print_freq          : 100
     save_freq           : 1000
     log_loss            : 20
-    percentage_val      : 50    # 1 - 100
+    percentage_val      : 100    # 1 - 100
