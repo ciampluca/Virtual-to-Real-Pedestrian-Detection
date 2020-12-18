@@ -43,8 +43,8 @@ pip install -r requirements.txt
 
 ## Data Preparation
 
-- ViPeD Dataset (**[ViPeD - Virtual Pedestrian Dataset](http://aimir.isti.cnr.it/viped/)**) - Just if you want to 
-re-train the model
+- ViPeD Dataset (**[ViPeD - Virtual Pedestrian Dataset](http://aimir.isti.cnr.it/viped/)**) - Note that we provide pre-trained models
+already trained exploiting our dataset.
 ```
 wget http://datino.isti.cnr.it/viped.zip
 unzip viped.zip -d data
@@ -88,12 +88,12 @@ COMING SOON
 In order to train the model using the ViPeD dataset and validate over the two real-world datasets MOT17Det and MOT20Det, 
 issue the following command:
 ```
-python train_val.py --cfg-file cfg/viped_training_cgf_resnet50.yaml
+python train_val.py --cfg-file cfg/viped_training_resnet50.yaml
 ```
 If you want to train the model using the Mixed-Batch Domain Adaptation Technique, for example using the ViPeD and the
 MOT17Det datasets, issue the following command:
 ```
-python train_val.py --cfg_file --cfg-file cfg/viped_training mb_mot17_cgf_resnet50.yaml
+python train_val.py --cfg-file cfg/viped_training_mb_mot17_resnet50.yaml
 ```
 Many other cfg files are available, see the `cfg` folder. 
 

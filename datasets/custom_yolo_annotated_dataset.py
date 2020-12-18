@@ -139,7 +139,7 @@ class CustomYoloAnnotatedDataset(VisionDataset):
 #     NUM_WORKERS = 0
 #     BATCH_SIZE = 4
 #     DEVICE = "cpu"
-#     cfg_file_path = "./cfg/viped_training_cgf_resnet50.yaml"
+#     cfg_file_path = "./cfg/viped_training_resnet50.yaml"
 #
 #     with open(cfg_file_path, 'r') as stream:
 #         try:
