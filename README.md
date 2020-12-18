@@ -74,10 +74,6 @@ If you want, you can put the datasets in a different folder than the `data` one.
 config.yaml file accordingly.
 
 
-## Evaluate
-COMING SOON
-
-
 ## Train
 In order to train the model using the ViPeD dataset and validate over the two real-world datasets MOT17Det and MOT20Det, 
 issue the following command:
@@ -97,6 +93,22 @@ python train_val.py --cfg-file cfg/mot20_trainingFromViped_resnet50.yaml
 Many other cfg files are available, see the `cfg` folder. 
 
 You can also create your personal cfg customizing the available options. 
+
+Note that we provide many pre-trained models (see next section).
+
+
+## Evaluate
+You can evaluate the pre-trained models created exploiting the two domain adaptation techniques over
+the two real-world datasets MOT17Det and MOT20Det. 
+
+For example, if you want to evaluate the pre-trained model using the Mixed Batch technique over the 
+MOT2Det dataset, issue the following command:
+```
+python train_val.py --cfg-file cfg/mot20_trainingFromViped_resnet50.yaml --load_model mot20det_mb_viped_resnet_50
+```
+Another cfg file for the MOT17Det dataset is available, see the `cfg` folder.
+Furthermore, other options are available, for example you can validate using the coco metrics instead
+of the mot ones. Just properly modify the related cfg file.
 
 
 ## Citations

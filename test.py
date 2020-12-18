@@ -198,8 +198,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument('--cfg-file', required=True, help="YAML config file path")
-    parser.add_argument('--load_model', default='coco_resnet_50',
-                        help='Load a model. Possible values are contained in the cfg file (test section) ')
+    parser.add_argument('--load_model', required=True,
+                        help='Load a model. Possible values are contained in the test cfg files ')
 
     args = parser.parse_args()
 
