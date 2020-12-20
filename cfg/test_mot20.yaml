@@ -24,8 +24,11 @@ test:
     pretrained_models :
         coco_resnet_50              : 'https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth'
         mot20det_mb_viped_resnet_50 : 'http://datino.isti.cnr.it/viped_model_zoo/mot20det_mb_viped_resnet50.zip'
-        mot20det_ft_viped_resnet50  : 'http://datino.isti.cnr.it/viped_model_zoo/mot20det_ft_viped_resnet50.zip/'
+        mot20det_ft_viped_resnet50  : 'http://datino.isti.cnr.it/viped_model_zoo/mot20det_ft_viped_resnet50.zip'
+        mot20det_resnet_50          : 'http://datino.isti.cnr.it/viped_model_zoo/mot20det_resnet50.zip'
     evaluation_api    : "mot"   # can be mot or coco
+    max_dets_per_image: 350
+    percentage_val    : 100    # 1 - 100
     batch_size        : 8
     num_workers       : 8
     results_folder    : "./test_results"

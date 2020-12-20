@@ -45,8 +45,6 @@ def evaluate(cfg, model, dataloader, dataset_name, split, args):
         evaluate_coco(model, dataloader, device=next(model.parameters()).device, categories=[1], save_on_file=filename,
                       max_dets=cfg['max_dets_per_image'])
     elif eval_api == 'mot':
-        if 'joint' in dataset_name:
-            pass
         results_folder = os.path.join(results_folder, "{}_{}_{}".
                                       format(dataset_name, ''.join(model_name.split("_")), "mot-eval"))
         if not os.path.exists(results_folder):
@@ -170,13 +168,17 @@ def main(args):
     datasets_names = data_cfg[phase]
 
     # Creating dataset(s) and dataloader(s)
+    percentage = None
+    if phase == "val":
+        percentage = test_cfg['percentage_val']
     for dataset_name, dataset_cfg in datasets_names.items():
         # Creating dataset
         dataset = CustomYoloAnnotatedDataset(
             data_root,
             {dataset_name: dataset_cfg},
             transforms=get_transform(),
-            phase=phase
+            phase=phase,
+            percentage=percentage
         )
         dataloader = DataLoader(
             dataset,
