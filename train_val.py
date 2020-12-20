@@ -243,9 +243,9 @@ def main(args):
 
     # and a learning rate scheduler
     if model_cfg['coco_model_pretrained']:
-        lr_step_size = min(30000, len(train_dataset))
+        lr_step_size = min(25000, len(train_dataset))
     else:
-        lr_step_size = min(50000, 2*len(train_dataset))
+        lr_step_size = min(40000, 2*len(train_dataset))
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
                                                    step_size=lr_step_size,
                                                    gamma=train_cfg['lr_gamma']

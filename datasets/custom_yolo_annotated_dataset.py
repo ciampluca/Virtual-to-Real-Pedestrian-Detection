@@ -48,13 +48,8 @@ class CustomYoloAnnotatedDataset(VisionDataset):
                                      if file.endswith(".jpg") or file.endswith(".png") or file.endswith(".jpeg")])
                 all_targets = sorted([file for file in os.listdir(self.targets_path[dataset_name]) if file.endswith(".txt")])
                 num_images = int((len(all_images) / 100) * percentage)
-                if phase == "train":
-                    indices = torch.randperm(len(all_images)).tolist()
-                    indices = indices[-num_images:]
-                else:
-                    assert len(all_images) % 211 != 0, "Validation set must be not multiple of 200"
-                    indices = range(0, num_images * 200, 200)
-                    indices = [i % len(all_images) for i in indices]
+                indices = torch.randperm(len(all_images)).tolist()
+                indices = indices[-num_images:]
                 self.images[dataset_name] = [all_images[i] for i in indices]
                 self.targets[dataset_name] = [all_targets[i] for i in indices]
             else:
