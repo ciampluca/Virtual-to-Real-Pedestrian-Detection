@@ -42,4 +42,4 @@ training:
     print_freq          : 100
     save_freq           : 1000
     log_loss            : 20
-    percentage_val      : 100    # 1 - 100
+    percentage_val      : null    # 1 - 100

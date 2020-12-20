@@ -28,7 +28,7 @@ test:
         mot17det_resnet_50          : 'http://datino.isti.cnr.it/viped_model_zoo/mot17det_resnet50.zip'
     evaluation_api    : "mot"   # can be mot or coco
     max_dets_per_image: 350
-    percentage_val    : 100    # 1 - 100
+    percentage_val    : null    # 1 - 100
     batch_size        : 8
     num_workers       : 8
     results_folder    : "./test_results"
