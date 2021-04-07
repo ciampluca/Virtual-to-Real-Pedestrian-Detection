@@ -8,7 +8,7 @@ This is the official implementation for our paper:
 
 published at *Sensors - Special Issue on Visual Sensors for Object Tracking and Recognition*
 
-We introduce **[ViPeD](http://aimir.isti.cnr.it/viped/)** (Virtual Pedestrian Dataset), a new synthetically generated 
+We introduce **[ViPeD](http://aimh.isti.cnr.it/viped/)** (Virtual Pedestrian Dataset), a new synthetically generated 
 set of images collected with the highly photo-realistic graphical engine of the video game GTA V (Grand Theft Auto V) 
 that extends the [JTA](https://aimagelab.ing.unimore.it/imagelab/page.asp?IdPage=25) dataset, where annotations are 
 automatically acquired, suitable for the pedestrian detection task. However, when training solely on the synthetic 
@@ -137,3 +137,7 @@ If you find this work or code useful for your research, please cite:
   organization={Springer}
 }
 ```
+
+
+## License
+ViPeD is licensed under a <a href="https://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>.
